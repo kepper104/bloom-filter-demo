@@ -85,6 +85,7 @@ fun QueryElementRow(viewModel: BloomViewModel){
         }
     }
 }
+// Add clear all button
 
 @Composable
 fun InsertElementRow(viewModel: BloomViewModel) {
@@ -118,10 +119,12 @@ fun showPopup(viewModel: BloomViewModel) {
     AnimatedVisibility(
         visible = viewModel.showElementResult,
         enter = slideInVertically {
-            with(density) { -200.dp.roundToPx() }
+            with(density) { 200.dp.roundToPx() }
         },
-        exit = slideOutVertically(),
-        modifier = Modifier.offset(0.dp, )
+        exit = slideOutVertically{
+                                 with(density) { 200.dp.roundToPx()}
+        },
+        modifier = Modifier.offset(0.dp, viewModel.windowState.size.height - 200.dp)
     ) {
         ElementResultPopup(
             message = viewModel.showElementText,
@@ -134,8 +137,8 @@ fun showPopup(viewModel: BloomViewModel) {
 fun ElementResultPopup(message: String, onDismiss: () -> Unit) {
     Card(
         modifier = Modifier
-            .padding(16.dp)
-            .width(280.dp),
+            .padding(32.dp)
+            .fillMaxWidth(),
         elevation = 8.dp
     ) {
         Column(
