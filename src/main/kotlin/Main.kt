@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -148,46 +149,52 @@ fun InsertElementRow(viewModel: BloomViewModel) {
     }
 }
 
-
 @Composable
 fun TableActualRow(viewModel: BloomViewModel) {
     val density = LocalDensity.current
 
-    Row (
-        modifier = Modifier,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "Настоящие элементы",
-            fontSize = 20.sp
-        )
-        Spacer(Modifier.width(20.dp))
-        for (element in viewModel.tableActual.elements) {
-            AnimatedVisibility(
-                visible = element != null,
-                enter = slideInHorizontally {
-                    with(density) { 20.dp.roundToPx() }
-                },
-                exit = slideOutHorizontally {
-                    with(density) { 20.dp.roundToPx() }
-                }
+    LazyRow {
+        item {
+            Row (
+                modifier = Modifier,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Button(
-                    onClick = {},
-                    modifier = Modifier.height(50.dp)
-                ) {
-                    if (element != null) {
-                        Text(
-                            text = element
-                        )
+                Text(
+                    text = "Настоящие элементы",
+                    fontSize = 20.sp
+                )
+                Spacer(Modifier.width(20.dp))
+                for (element in viewModel.tableActual.elements) {
+                    AnimatedVisibility(
+                        visible = element != null,
+                        enter = slideInHorizontally {
+                            with(density) { 20.dp.roundToPx() }
+                        },
+                        exit = slideOutHorizontally {
+                            with(density) { 20.dp.roundToPx() }
+                        }
+                    ) {
+                        Button(
+                            onClick = {},
+                            modifier = Modifier.height(50.dp)
+                        ) {
+                            if (element != null) {
+                                Text(
+                                    text = element
+                                )
+                            }
+                        }
                     }
+
+                    Spacer(Modifier.width(10.dp))
                 }
             }
 
-            Spacer(Modifier.width(10.dp))
         }
     }
+
 }
+
 @Composable
 fun Footer(viewModel: BloomViewModel) {
     Card (
@@ -247,12 +254,10 @@ fun Footer(viewModel: BloomViewModel) {
     }
 }
 
-
-
 @Composable
 fun TableVisualization(viewModel: BloomViewModel) {
     LazyColumn (
-        Modifier.fillMaxWidth()
+        Modifier.fillMaxWidth().height(620.dp)
     ) {
         item {
             Column(

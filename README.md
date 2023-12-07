@@ -17,4 +17,4 @@ telling if the filter worked correctly or an error (hash collision or similar) o
 ### TODO:
 - Add English/Russian in-app support
 - Update Readme: put english picture in english section and write russian section
-- Currently, doesn't scale properly with more than 10 table rows
+- Add option to change table size from the app

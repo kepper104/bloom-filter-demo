@@ -26,9 +26,9 @@ class BloomViewModel(
     var tableSize = 10
 
     var tableParents by mutableStateOf(List(tableSize) { TableParent(enabled = false, highlighted = false) })
-    var tableChildren by mutableStateOf(List(tableSize){ List(10) {TableChild()} })
+    var tableChildren by mutableStateOf(List(tableSize){ List(tableSize) {TableChild()} })
 
-    var tableActual by mutableStateOf(ActualTable())
+    var tableActual by mutableStateOf(ActualTable(tableSize = tableSize))
 
 
     fun clearAll() {
