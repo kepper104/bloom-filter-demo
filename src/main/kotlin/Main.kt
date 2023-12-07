@@ -1,8 +1,6 @@
 @file:Suppress("FunctionName")
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.*
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -27,14 +25,15 @@ import androidx.compose.ui.window.rememberWindowState
 
 
 fun main() = application {
-    val viewModel = BloomViewModel()
     val windowState = rememberWindowState(size = DpSize(600.dp, 1000.dp))
+
+    val viewModel = BloomViewModel(windowState)
 
     Window(
         onCloseRequest = ::exitApplication,
         title = "Bloom Filter Demo",
         icon = painterResource("logo.png"),
-        state = windowState
+        state = viewModel.windowState
     ) {
         App(viewModel)
     }
@@ -49,7 +48,6 @@ fun App(viewModel: BloomViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-//        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
@@ -120,12 +118,11 @@ fun showPopup(viewModel: BloomViewModel) {
     val density = LocalDensity.current
     AnimatedVisibility(
         visible = viewModel.showElementResult,
-        enter = slideInHorizontally {
+        enter = slideInVertically {
             with(density) { -200.dp.roundToPx() }
         },
-        exit = slideOutHorizontally(
-        ),
-        modifier = Modifier.offset(0.dp, 800.dp)
+        exit = slideOutVertically(),
+        modifier = Modifier.offset(0.dp, )
     ) {
         ElementResultPopup(
             message = viewModel.showElementText,
@@ -174,7 +171,6 @@ fun BloomFilterVisualization(viewModel: BloomViewModel) {
                         IconButton(
                             onClick = {},
                         ) {
-                            // add smooth movement of arrow (maybe)
                             Icon(Icons.Default.ArrowForward, "Arrow", tint = if (viewModel.bloomTable[i].maybeContainsGivenString) Color.Black else Color.Transparent)
                         }
                         Button(
@@ -199,9 +195,7 @@ fun BloomFilterVisualization(viewModel: BloomViewModel) {
 
                         for (bloomElement in viewModel.elementVisualizationTable[i]) {
                             if (!bloomElement.added) continue
-//                            val darkGreen = "#03AC13"
-//                            val darkGreenColor = Integer.parseInt(darkGreen.replaceFirst("#","0x"), 16)
-//
+                            
                             Button(
                                 colors = ButtonDefaults.buttonColors(backgroundColor = if (bloomElement.highlighted) Color(11, 102, 35) else Color.Gray),
                                 modifier = Modifier.size(100.dp, 50.dp),
@@ -215,10 +209,7 @@ fun BloomFilterVisualization(viewModel: BloomViewModel) {
 
                     Spacer(Modifier.height(10.dp))
                 }
-
             }
-
         }
-
     }
 }

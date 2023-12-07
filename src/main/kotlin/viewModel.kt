@@ -1,23 +1,27 @@
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.WindowState
 
-class BloomViewModel() {
+class BloomViewModel(
+    val windowState: WindowState
+) {
     var insertedElementText by mutableStateOf("")
     var queriedElementText by mutableStateOf("")
 
     var showElementResult by mutableStateOf(false)
     var showElementText by mutableStateOf("")
 
-    private var usedHashFunctions = listOf(::hashByLength)
+//    private var usedHashFunctions = listOf(::hashByLength)
 
-    // currently only works with single hash function, FIXME
-//    private var usedHashFunctions = listOf(::hashByLength, ::hashByCharSum)
+    private var usedHashFunctions = listOf(::hashByLength, ::hashByCharSum)
 
     var tableSize = 10
 
     var bloomTable by mutableStateOf(List(tableSize) { BloomBoolean(false, false) })
     var elementVisualizationTable by mutableStateOf(List(tableSize){ List(10) {BloomElement()} })
+
+
 
     fun insertElement() {
         if (insertedElementText.trim() == "") return
@@ -54,7 +58,7 @@ class BloomViewModel() {
         insertedElementText = ""
     }
 
-    fun queryElement(): Boolean? {
+    fun isElementMaybePresent(): Boolean? {
         if (queriedElementText.trim() == "") return null
 
 
@@ -66,8 +70,22 @@ class BloomViewModel() {
                 break
             }
         }
-
         return isGood
+    }
+
+    fun clearElementHighlighting() {
+        elementVisualizationTable = elementVisualizationTable.mapIndexed { rowIndex, row ->
+            row.mapIndexed { index, b ->
+                b.copy(highlighted = false)
+            }
+
+        }
+    }
+
+    fun clearTableCellHighlighting() {
+        bloomTable = bloomTable.mapIndexed { index, b ->
+            b.copy(maybeContainsGivenString = false)
+        }
     }
 
     fun showQueryResultPopup(maybeExists: Boolean) {
@@ -94,13 +112,14 @@ class BloomViewModel() {
         highlightBloomElements()
         highlightTableCells()
 
-        val elementMaybeExists = queryElement() ?: return
+        val elementMaybeExists = isElementMaybePresent() ?: return
         showQueryResultPopup(elementMaybeExists)
 
         queriedElementText = ""
     }
 
     fun highlightBloomElements() {
+        clearElementHighlighting()
         for(hashFunction in usedHashFunctions) {
             val mustBeEnabledId = hashFunction(queriedElementText, tableSize)
 
@@ -109,6 +128,7 @@ class BloomViewModel() {
     }
 
     fun highlightTableCells() {
+        clearTableCellHighlighting()
         for(hashFunction in usedHashFunctions) {
             val possiblyContainingElementID = hashFunction(queriedElementText, tableSize)
 
@@ -116,26 +136,12 @@ class BloomViewModel() {
                 if (index == possiblyContainingElementID){
                     b.copy(maybeContainsGivenString = true)
                 } else {
-                    b.copy(maybeContainsGivenString = false)
+                    b
                 }
             }
-
-        }
-    }
-    fun clearElementHighlighting() {
-        elementVisualizationTable = elementVisualizationTable.mapIndexed { rowIndex, row ->
-            row.mapIndexed { index, b ->
-                b.copy(highlighted = false)
-            }
-
         }
     }
 
-    fun clearTableCellHighlighting() {
-        bloomTable = bloomTable.mapIndexed { index, b ->
-            b.copy(maybeContainsGivenString = false)
-        }
-    }
 
     fun highlightElementInTable(idToHighlight: Int, stringToHighlight: String) {
         elementVisualizationTable = elementVisualizationTable.mapIndexed { rowIndex, row ->
@@ -143,7 +149,7 @@ class BloomViewModel() {
                 if (rowIndex == idToHighlight && b.text == stringToHighlight){
                     b.copy(highlighted = true)
                 } else {
-                    b.copy(highlighted = false)
+                    b
                 }
             }
 
