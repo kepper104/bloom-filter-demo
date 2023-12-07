@@ -14,9 +14,9 @@ class BloomViewModel(
     var insertedElementText by mutableStateOf("")
     var queriedElementText by mutableStateOf("")
 
-    var elementQueryText by mutableStateOf("Пока ничего")
-    var elementQueryColor by mutableStateOf(Color.Gray)
-    var elementQueryStatus by mutableStateOf(GuessStatus.None)
+    var elementCheckResultText by mutableStateOf("Пока ничего")
+    var elementCheckResultColor by mutableStateOf(Color.Gray)
+    var elementCheckResultStatus by mutableStateOf(GuessStatus.None)
 
 //    private var usedHashFunctions = listOf(::hashByLength)
 //    private var usedHashFunctions = listOf(::hashByLength, ::hashByCharSum)
@@ -25,74 +25,73 @@ class BloomViewModel(
 
     var tableSize = 10
 
-    var bloomTable by mutableStateOf(List(tableSize) { BloomBoolean(enabled = false, maybeContainsGivenString = false) })
-    var elementVisualizationTable by mutableStateOf(List(tableSize){ List(10) {BloomElement()} })
+    var tableParents by mutableStateOf(List(tableSize) { TableParent(enabled = false, highlighted = false) })
+    var tableChildren by mutableStateOf(List(tableSize){ List(10) {TableChild()} })
 
-    var realTable by mutableStateOf(RealTable())
+    var tableActual by mutableStateOf(ActualTable())
 
 
     fun clearAll() {
         insertedElementText = ""
         queriedElementText = ""
-        elementQueryText = "Пока ничего"
-        elementQueryColor = Color.Gray
-        bloomTable = List(tableSize) { BloomBoolean(enabled = false, maybeContainsGivenString = false) }
-        elementVisualizationTable = List(tableSize){ List(10) {BloomElement()} }
-        realTable = RealTable()
-        elementQueryStatus = GuessStatus.None
+        elementCheckResultText = "Пока ничего"
+        elementCheckResultColor = Color.Gray
+        elementCheckResultStatus = GuessStatus.None
+        tableParents = List(tableSize) { TableParent(enabled = false, highlighted = false) }
+        tableChildren = List(tableSize){ List(10) {TableChild()} }
+        tableActual = ActualTable()
     }
 
-    private fun clearElementHighlighting() {
-        elementVisualizationTable = elementVisualizationTable.map { row ->
-            row.map { b ->
-                b.copy(highlighted = false)
-            }
+    private fun clearTableChildrenHighlighting() {
+        tableChildren = tableChildren.map { childrenRow ->
+            childrenRow.map { it.copy(highlighted = false) }
         }
     }
 
-    private fun clearTableCellHighlighting() {
-        bloomTable = bloomTable.map { b ->
-            b.copy(maybeContainsGivenString = false)
-        }
+    private fun clearTableParentHighlighting() {
+        tableParents = tableParents.map { it.copy(highlighted = false) }
     }
-
 
     fun insertElement() {
-        if (insertedElementText.trim() == "") return
+        if (insertedElementText.trim().isEmpty()) return
 
         insertedElementText = insertedElementText.lowercase()
 
         var inserted = false
-        realTable = realTable.copy(
-            elements = realTable.elements.map { el ->
-                if (el == null && !inserted) {
+
+        tableActual = tableActual.copy(
+            elements = tableActual.elements.map { element ->
+                if (element == null && !inserted) {
                     inserted = true
                     insertedElementText
                 } else {
-                    el
+                    element
                 }
             }
         )
 
         for(hashFunction in usedHashFunctions) {
-            val idToEnable = hashFunction(insertedElementText, tableSize)
-            bloomTable = bloomTable.mapIndexed { index, b ->
-                if (index == idToEnable){
-                    b.copy(enabled = true)
+            val tableParentIdToEnable = hashFunction(insertedElementText, tableSize)
+
+            // Enable according to hashes new parent table cells
+            tableParents = tableParents.mapIndexed { index, tableParent ->
+                if (index == tableParentIdToEnable){
+                    tableParent.copy(enabled = true)
                 } else {
-                    b
+                    tableParent
                 }
             }
 
-            elementVisualizationTable = elementVisualizationTable.mapIndexed { rowIndex, row ->
-                if (rowIndex == idToEnable){
-                    var insertedVar = false
-                    row.map { b ->
-                        if (!b.added && !insertedVar){
-                            insertedVar = true
-                            b.copy(added = true, text = insertedElementText, highlighted = false)
+            // Add (enable and populate with data) currently entered element into tableChildren
+            tableChildren = tableChildren.mapIndexed { rowIndex, row ->
+                if (rowIndex == tableParentIdToEnable){
+                    var isInserted = false
+                    row.map { bloomChild ->
+                        if (!bloomChild.added && !isInserted){
+                            isInserted = true
+                            bloomChild.copy(added = true, text = insertedElementText, highlighted = false)
                         } else {
-                            b
+                            bloomChild
                         }
                     }
                 } else {
@@ -103,113 +102,116 @@ class BloomViewModel(
         insertedElementText = ""
     }
 
-    private fun isElementMaybePresent(): Boolean? {
-        if (queriedElementText.trim() == "") return null
+    private fun isElementPresentInTableParents(): Boolean? {
+        if (queriedElementText.trim().isEmpty()) return null
 
-        var isGood = true
-        for(hashFunction in usedHashFunctions) {
+        return usedHashFunctions.all { hashFunction ->
             val mustBeEnabledId = hashFunction(queriedElementText, tableSize)
-            if(!bloomTable[mustBeEnabledId].enabled) {
-                isGood = false
-                break
-            }
+            tableParents[mustBeEnabledId].enabled
         }
-
-        return isGood
     }
 
-    private fun isElementPresentInRealTable(): Boolean {
-        for (element in realTable.elements) {
-            if (element == queriedElementText) {
-                return true
-            }
-        }
-        return false
+    private fun isElementPresentInTableActual(): Boolean {
+        return tableActual.elements.any { it == queriedElementText }
     }
 
-    private fun updateBloomSuccessStatus() {
-        val maybeExistsInBloomFilter = isElementMaybePresent()
-        val existsInRealTable = isElementPresentInRealTable()
+    private fun updateBloomPredictionSuccessStatus() {
+        val existsInTableParents = isElementPresentInTableParents()
+        val existsInTableActual = isElementPresentInTableActual()
 
-        if (existsInRealTable && maybeExistsInBloomFilter == true) {
-            elementQueryStatus = GuessStatus.TruePositive
-        } else if (!existsInRealTable && maybeExistsInBloomFilter == true) {
-            elementQueryStatus = GuessStatus.FalsePositive
-        } else if (!existsInRealTable && maybeExistsInBloomFilter == false) {
-            elementQueryStatus = GuessStatus.TrueNegative
-        } else if (existsInRealTable && maybeExistsInBloomFilter == false){
-            elementQueryStatus = GuessStatus.FalseNegative
+        if (existsInTableActual && existsInTableParents == true) {
+            elementCheckResultStatus = GuessStatus.TruePositive
+        } else if (!existsInTableActual && existsInTableParents == true) {
+            elementCheckResultStatus = GuessStatus.FalsePositive
+        } else if (!existsInTableActual && existsInTableParents == false) {
+            elementCheckResultStatus = GuessStatus.TrueNegative
+        } else if (existsInTableActual && existsInTableParents == false){
+            elementCheckResultStatus = GuessStatus.FalseNegative
         } else {
-            println("Unexpected values: $maybeExistsInBloomFilter, $existsInRealTable")
+            println("ERROR. Unexpected values: $existsInTableParents, $existsInTableActual")
         }
     }
 
+    private fun updateFilterResult() {
+        val isPresentInTableParens = isElementPresentInTableParents() ?: return
 
-    private fun changeFilterPrediction() {
-        val maybeExists = isElementMaybePresent() ?: return
+        elementCheckResultColor =
+            if (isPresentInTableParens)
+                PrettyColors.Yellow.color
+            else
+                Color.DarkGray
 
-        elementQueryColor = if (maybeExists) DataClassesEnums.Yellow.color else Color.DarkGray
-        elementQueryText = if (maybeExists)
-                            "Элемент $queriedElementText возможно присутствует"
-                        else
-                            "Элемент $queriedElementText точно отсутствует"
+        elementCheckResultText =
+            if (isPresentInTableParens)
+                "Элемент `$queriedElementText` возможно присутствует"
+            else
+                "Элемент `$queriedElementText` точно отсутствует"
+    }
+
+    private fun clearCheckValues() {
+        elementCheckResultText = "Пока ничего"
+        elementCheckResultColor = Color.Gray
+        elementCheckResultStatus = GuessStatus.None
+        clearTableChildrenHighlighting()
+        clearTableParentHighlighting()
+        queriedElementText = ""
     }
 
     fun checkElement() {
         queriedElementText = queriedElementText.lowercase()
 
-        if (queriedElementText.trim() == "") {
-            clearElementHighlighting()
-            clearTableCellHighlighting()
-            queriedElementText = ""
-
+        if (queriedElementText.trim().isEmpty()) {
+            clearCheckValues()
             return
         }
 
-        highlightBloomElements()
-        highlightTableCells()
-        updateBloomSuccessStatus()
-        changeFilterPrediction()
+        highlightTableChildren(queriedElementText)
+        highlightTableParents(queriedElementText)
+        updateBloomPredictionSuccessStatus()
+        updateFilterResult()
+
+        queriedElementText = ""
     }
 
-    private fun highlightBloomElements() {
-        clearElementHighlighting()
-        for(hashFunction in usedHashFunctions) {
-            val mustBeEnabledId = hashFunction(queriedElementText, tableSize)
+    private fun highlightTableChildren(queriedText: String) {
+        clearTableChildrenHighlighting()
 
-            highlightElementInTable(mustBeEnabledId, queriedElementText)
+        for(hashFunction in usedHashFunctions) {
+            val tableParentIdToSearch = hashFunction(queriedText, tableSize)
+
+            highlightTableChild(tableParentIdToSearch, queriedText)
         }
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private fun highlightTableCells() {
+    private fun highlightTableParents(queriedText: String) {
         GlobalScope.launch {
-            clearTableCellHighlighting()
+            clearTableParentHighlighting()
 
+            // To make arrows reappear when calling elementCheck with same parameters
             delay(300L)
 
             for(hashFunction in usedHashFunctions) {
-                val possiblyContainingElementID = hashFunction(queriedElementText, tableSize)
-                bloomTable = bloomTable.mapIndexed { index, b ->
-                    if (index == possiblyContainingElementID){
-                        b.copy(maybeContainsGivenString = true)
+                val tableParentIdToSearch = hashFunction(queriedText, tableSize)
+
+                tableParents = tableParents.mapIndexed { index, tableParent ->
+                    if (index == tableParentIdToSearch){
+                        tableParent.copy(highlighted = true)
                     } else {
-                        b
+                        tableParent
                     }
                 }
             }
-            queriedElementText = ""
         }
     }
 
-
-    private fun highlightElementInTable(idToHighlight: Int, stringToHighlight: String) {
-        elementVisualizationTable = elementVisualizationTable.mapIndexed { rowIndex, row ->
-            row.map { b ->
-                if (rowIndex == idToHighlight && b.text == stringToHighlight){
-                    b.copy(highlighted = true)
+    private fun highlightTableChild(tableParentToCheck: Int, stringToHighlight: String) {
+        tableChildren = tableChildren.mapIndexed { rowIndex, row ->
+            row.map { tableChild ->
+                if (rowIndex == tableParentToCheck && tableChild.text == stringToHighlight){
+                    tableChild.copy(highlighted = true)
                 } else {
-                    b
+                    tableChild
                 }
             }
 

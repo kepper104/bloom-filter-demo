@@ -41,7 +41,6 @@ fun main() = application {
     }
 }
 
-//  <a href="https://www.flaticon.com/free-icons/filter" title="filter icons">Filter icons created by Freepik - Flaticon</a>
 
 @Composable
 @Preview
@@ -56,8 +55,8 @@ fun App(viewModel: BloomViewModel) {
         InsertElementRow(viewModel)
         QueryElementRow(viewModel)
 
-        BloomFilterVisualization(viewModel)
-        RealElementsRow(viewModel)
+        TableVisualization(viewModel)
+        TableActualRow(viewModel)
         Footer(viewModel)
     }
 }
@@ -151,7 +150,7 @@ fun InsertElementRow(viewModel: BloomViewModel) {
 
 
 @Composable
-fun RealElementsRow(viewModel: BloomViewModel) {
+fun TableActualRow(viewModel: BloomViewModel) {
     val density = LocalDensity.current
 
     Row (
@@ -163,7 +162,7 @@ fun RealElementsRow(viewModel: BloomViewModel) {
             fontSize = 20.sp
         )
         Spacer(Modifier.width(20.dp))
-        for (element in viewModel.realTable.elements) {
+        for (element in viewModel.tableActual.elements) {
             AnimatedVisibility(
                 visible = element != null,
                 enter = slideInHorizontally {
@@ -205,7 +204,7 @@ fun Footer(viewModel: BloomViewModel) {
         ) {
             Column (
                 modifier = Modifier
-                    .background(viewModel.elementQueryColor)
+                    .background(viewModel.elementCheckResultColor)
                     .fillMaxHeight()
                     .weight(1f)
                     .padding(10.dp),
@@ -215,19 +214,19 @@ fun Footer(viewModel: BloomViewModel) {
                 Text(
                     text = "Что думает фильтр",
                     fontSize = 20.sp,
-                    color = if (viewModel.elementQueryColor == Color.DarkGray) Color.White else Color.Black
+                    color = if (viewModel.elementCheckResultColor == Color.DarkGray) Color.White else Color.Black
 
                 )
                 Text(
-                    text = viewModel.elementQueryText,
-                    color = if (viewModel.elementQueryColor == Color.DarkGray) Color.White else Color.Black
+                    text = viewModel.elementCheckResultText,
+                    color = if (viewModel.elementCheckResultColor == Color.DarkGray) Color.White else Color.Black
 
                 )
             }
 
             Column (
                 modifier = Modifier
-                    .background(viewModel.elementQueryStatus.color)
+                    .background(viewModel.elementCheckResultStatus.color)
                     .fillMaxHeight()
                     .weight(1f)
                     .padding(10.dp),
@@ -239,7 +238,7 @@ fun Footer(viewModel: BloomViewModel) {
                     fontSize = 20.sp
                 )
                 Text(
-                    text = viewModel.elementQueryStatus.text
+                    text = viewModel.elementCheckResultStatus.text
                 )
             }
 
@@ -251,7 +250,7 @@ fun Footer(viewModel: BloomViewModel) {
 
 
 @Composable
-fun BloomFilterVisualization(viewModel: BloomViewModel) {
+fun TableVisualization(viewModel: BloomViewModel) {
     LazyColumn (
         Modifier.fillMaxWidth()
     ) {
@@ -264,14 +263,14 @@ fun BloomFilterVisualization(viewModel: BloomViewModel) {
                     .padding(8.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                BloomRows(viewModel)
+                TableRows(viewModel)
             }
         }
     }
 }
 
 @Composable
-fun BloomRows(viewModel: BloomViewModel) {
+fun TableRows(viewModel: BloomViewModel) {
     val density = LocalDensity.current
 
     for (i in 0 until viewModel.tableSize) {
@@ -280,7 +279,7 @@ fun BloomRows(viewModel: BloomViewModel) {
                 modifier = Modifier.width(50.dp)
             ) {
                 AnimatedVisibility(
-                    visible = viewModel.bloomTable[i].maybeContainsGivenString,
+                    visible = viewModel.tableParents[i].highlighted,
                     enter = slideInHorizontally {
                         with(density) { -20.dp.roundToPx() }
                     },
@@ -295,7 +294,7 @@ fun BloomRows(viewModel: BloomViewModel) {
                             Icons.Default.ArrowForward,
                             "Arrow",
                             tint =
-                                if (viewModel.bloomTable[i].maybeContainsGivenString)
+                                if (viewModel.tableParents[i].highlighted)
                                     Color.Black
                                 else
                                     Color.Transparent
@@ -311,8 +310,8 @@ fun BloomRows(viewModel: BloomViewModel) {
                     .size(100.dp, 50.dp)
                     .border(
                         6.dp,
-                        if (viewModel.bloomTable[i].enabled)
-                            DataClassesEnums.SpringGreen.color
+                        if (viewModel.tableParents[i].enabled)
+                            PrettyColors.SpringGreen.color
                         else
                             Color.Transparent,
                         RoundedCornerShape(7.dp)
@@ -325,7 +324,7 @@ fun BloomRows(viewModel: BloomViewModel) {
 
             Spacer(Modifier.width(15.dp))
 
-            for (bloomElement in viewModel.elementVisualizationTable[i]) {
+            for (bloomElement in viewModel.tableChildren[i]) {
                 AnimatedVisibility(
                     visible = bloomElement.added,
                     enter = slideInHorizontally {
@@ -338,7 +337,7 @@ fun BloomRows(viewModel: BloomViewModel) {
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor =
                             if (bloomElement.highlighted)
-                                DataClassesEnums.Green.color
+                                PrettyColors.Green.color
                             else
                                 Color.Gray
                         ),
@@ -355,3 +354,5 @@ fun BloomRows(viewModel: BloomViewModel) {
         Spacer(Modifier.height(10.dp))
     }
 }
+
+//  https://www.flaticon.com/free-icons/filter Filter icons created by Freepik - Flaticon
