@@ -18,3 +18,4 @@ telling if the filter worked correctly or an error (hash collision or similar) o
 - Add English/Russian in-app support
 - Update Readme: put english picture in english section and write russian section
 - Add option to change table size from the app
+- Currently, window barely fits in a normal 1080p monitor in height, need to reduce default table size or table view height
