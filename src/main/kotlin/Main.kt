@@ -26,7 +26,6 @@ import androidx.compose.ui.window.rememberWindowState
 
 fun main() = application {
     val windowState = rememberWindowState(size = DpSize(600.dp, 1000.dp))
-
     val viewModel = BloomViewModel(windowState)
 
     Window(
@@ -154,6 +153,8 @@ fun ElementResultPopup(message: String, onDismiss: () -> Unit) {
 
 @Composable
 fun BloomFilterVisualization(viewModel: BloomViewModel) {
+    val density = LocalDensity.current
+
     LazyColumn (
         Modifier.fillMaxWidth()
     ) {
@@ -194,19 +195,26 @@ fun BloomFilterVisualization(viewModel: BloomViewModel) {
                         Spacer(Modifier.width(15.dp))
 
                         for (bloomElement in viewModel.elementVisualizationTable[i]) {
-                            if (!bloomElement.added) continue
-                            
-                            Button(
-                                colors = ButtonDefaults.buttonColors(backgroundColor = if (bloomElement.highlighted) Color(11, 102, 35) else Color.Gray),
-                                modifier = Modifier.size(100.dp, 50.dp),
-                                onClick = {},
+                            AnimatedVisibility(
+                                visible = bloomElement.added,
+                                enter = slideInHorizontally {
+                                    with(density) { 20.dp.roundToPx() }
+                                },
+                                exit = slideOutHorizontally (),
+
                             ) {
-                                Text(bloomElement.text)
+                                Button(
+                                    colors = ButtonDefaults.buttonColors(backgroundColor = if (bloomElement.highlighted) Color(11, 102, 35) else Color.Gray),
+                                    modifier = Modifier.size(100.dp, 50.dp),
+                                    onClick = {},
+                                ) {
+                                    Text(bloomElement.text)
+                                }
+
                             }
                             Spacer(Modifier.width(10.dp))
                         }
                     }
-
                     Spacer(Modifier.height(10.dp))
                 }
             }
